@@ -29,21 +29,21 @@ const EndLabels = (props: any) => {
   const labels = MODELS
     .filter(m => !hiddenModels?.has(m.id))
     .map(m => {
-      let lastPoint = processedData[0];
-      for (let i = processedData.length - 1; i >= 0; i--) {
-        if (processedData[i][m.id] != null) {
-          lastPoint = processedData[i];
-          break;
-        }
-      }
-      if (!lastPoint) return null;
+      const lastIdx = processedData.findLastIndex(d => d[m.id] != null);
+      if (lastIdx === -1) return null;
 
+      const lastPoint = processedData[lastIdx];
       const chartVal = lastPoint[m.id];
       if (chartVal == null || isNaN(chartVal)) return null;
 
       const targetY = ot + (yAxis.scale(chartVal) ?? 0);
-      const xRaw = xAxis.scale(lastPoint.timestamp);
-      const targetX = Number.isFinite(xRaw) ? xRaw : (offset?.left ?? 10);
+
+      // Calculate X based on index within the visible data set
+      const totalPoints = processedData.length;
+      const chartW = offset?.width ?? 500;
+      const leftGap = offset?.left ?? 0;
+
+      const targetX = leftGap + (lastIdx / Math.max(1, totalPoints - 1)) * chartW;
 
       return { ...m, displayVal: chartVal, targetY, targetX, hasChartLine: true };
     })
@@ -73,7 +73,7 @@ const EndLabels = (props: any) => {
   }
 
   for (let i = 0; i < spread.length; i++) {
-    spread[i] = Math.max(ot + 14, Math.min(ot + chartH - 14, spread[i]));
+    spread[i] = Math.max(ot + 20, Math.min(ot + chartH - 20, spread[i]));
   }
 
   return (
@@ -192,33 +192,9 @@ const PerformanceChart = ({ equityData = [], modelStats = [] }: PerformanceChart
     return dataCopy;
   }, [chartData]);
 
-  const xDomain = useMemo(() => {
-    const firstPoint = processedData[0];
-    const firstTime = firstPoint ? firstPoint.timestamp : Date.now();
-    const lastTime = Date.now();
-
-    if (timeRange === 'ALL') {
-      const minSpan = 60 * 60 * 1000;
-      const actualSpan = lastTime - firstTime;
-      return [firstTime, Math.max(firstTime + minSpan, lastTime)];
-    }
-
-    const spanMap: Record<string, number> = {
-      '1H': 60 * 60 * 1000,
-      '1D': 24 * 60 * 60 * 1000,
-      '1W': 7 * 24 * 60 * 60 * 1000,
-    };
-    const span = spanMap[timeRange] || spanMap['1H'];
-
-    // End at the last actual point in processedData if possible
-    const lastPoint = processedData[processedData.length - 1];
-    const chartEnd = (lastPoint && lastPoint.timestamp) ? lastPoint.timestamp : lastTime;
-
-    const start = Math.max(chartEnd - span, firstTime);
-    const end = Math.max(start + span, chartEnd);
-
-    return [start, end];
-  }, [timeRange, processedData]);
+  // xDomain is no longer needed for category-like indexing, 
+  // but we can keep it as a placeholder if requested.
+  const xDomain = undefined;
 
   return (
     <div className="flex flex-col h-full">
@@ -257,21 +233,14 @@ const PerformanceChart = ({ equityData = [], modelStats = [] }: PerformanceChart
           <LineChart data={processedData} margin={{ top: 20, right: 110, left: 10, bottom: 5 }} style={{ overflow: 'visible' }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
             <XAxis
-              dataKey="timestamp"
-              type="number"
-              scale="time"
-              domain={xDomain}
-              tick={{ fontSize: 9, fontFamily: 'Minecraftia, monospace', fill: 'hsl(var(--muted-foreground))' }}
-              tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
-              tickFormatter={v => new Date(v).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              hide={true}
             />
             <YAxis
               tick={{ fontSize: 9, fontFamily: 'Minecraftia, monospace', fill: 'hsl(var(--muted-foreground))' }}
               tickLine={false}
               axisLine={{ stroke: 'hsl(var(--border))' }}
               tickFormatter={v => viewMode === '$' ? `$${v.toLocaleString()}` : `${v.toFixed(1)}%`}
-              domain={['auto', 'auto']}
+              domain={viewMode === '%' ? [-0.5, 'auto'] : ['auto', 'auto']}
             />
             <ReferenceLine
               y={viewMode === '$' ? 1000 : 0}
