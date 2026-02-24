@@ -20,11 +20,11 @@ function scheduleBalanceSync(): void {
     if (_balanceSyncTimer) clearTimeout(_balanceSyncTimer);
     if (_balanceSyncTimer2) clearTimeout(_balanceSyncTimer2);
     _balanceSyncTimer = setTimeout(() => {
-        _balanceSyncFn!().catch(() => {});
+        _balanceSyncFn!().catch(() => { });
         _balanceSyncTimer = null;
     }, 4_000);
     _balanceSyncTimer2 = setTimeout(() => {
-        _balanceSyncFn!().catch(() => {});
+        _balanceSyncFn!().catch(() => { });
         _balanceSyncTimer2 = null;
     }, 15_000);
 }
@@ -92,7 +92,7 @@ export function reloadDonors(donors: { agentId: string; proxyWallet: string; onc
     console.log(`[CopyTrader] Donors reloaded: ${donorWalletSet.size} wallet(s) → ${total} agent(s)`);
 }
 
-export async function startCopyTraderSocket() {
+export async function startMarketAnalyzerSocket() {
     console.log('[CopyTrader] Initializing Gamma API Copy Module...');
 
     // Init own proxy wallet monitoring (always active, regardless of donor config)

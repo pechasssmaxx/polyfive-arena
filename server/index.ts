@@ -32,7 +32,7 @@ import cors from 'cors';
 
 import { initializeAgents, syncClobBalances, getAllTrades, getAllAgentStats, getRecentEquity, clearAllData, recordEquitySnapshot } from './models/db.js';
 import { addSSEClient, pushStatsUpdate } from './sse.js';
-import { startCopyTraderSocket, setBalanceSyncFn, reloadDonors } from './services/copyTrader.js';
+import { startMarketAnalyzerSocket, setBalanceSyncFn, reloadDonors } from './services/marketAnalyzer.js';
 import { initRealTrader, getAllClobBalances } from './services/realTrader.js';
 import { startOnChainListener } from './services/onChainListener.js';
 import { MODELS, AGENT_DONORS } from '../src/data/constants.js';
@@ -237,8 +237,8 @@ const startServer = async () => {
                 pushStatsUpdate();
             }, 20 * 1000);
             startOnChainListener();
-            // Start the copy-trading listener (initializes with AGENT_DONORS defaults)
-            startCopyTraderSocket();
+            // Start the autonomous AI analysis engine
+            startMarketAnalyzerSocket();
             // Override with persisted donors.json if available (hot-reload config)
             const savedDonors = readDonorsFile();
             if (savedDonors) {

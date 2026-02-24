@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "cd server && npx tsx index.ts",
-    "server:dev": "cd server && npx tsx watch index.ts",
+    "server": "npx tsx server/index.ts",
+    "server:dev": "npx tsx watch server/index.ts",
     "build": "vite build",
     "start": "npm run build && npm run server",
     "build:dev": "vite build --mode development",
@@ -45,7 +45,6 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-query": "^5.83.0",
-
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -65,7 +64,16 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@polymarket/clob-client": "^5.2.4",
+    "@polymarket/real-time-data-client": "^1.4.0",
+    "better-sqlite3": "^12.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "ethers": "^5.8.0",
+    "express": "^4.21.2",
+    "global-agent": "^4.1.2",
+    "tsx": "^4.19.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

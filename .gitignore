@@ -1,3 +1,11 @@
+# Claude & AI Assistant (Hide from GitHub)
+.agents/
+.claude/
+.planning/
+brain/
+*.md
+!README.md
+
 # Logs
 logs
 *.log
