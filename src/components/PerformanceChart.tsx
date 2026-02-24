@@ -212,7 +212,7 @@ const PerformanceChart = ({ equityData = [], modelStats = [] }: PerformanceChart
 
     // End at the last actual point in processedData if possible
     const lastPoint = processedData[processedData.length - 1];
-    const chartEnd = lastPoint ? lastPoint.timestamp : lastTime;
+    const chartEnd = (lastPoint && lastPoint.timestamp) ? lastPoint.timestamp : lastTime;
 
     const start = Math.max(chartEnd - span, firstTime);
     const end = Math.max(start + span, chartEnd);
