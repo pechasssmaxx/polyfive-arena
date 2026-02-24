@@ -45,8 +45,8 @@ export async function initRealTrader(): Promise<void> {
         const funder = process.env[`BOT_${i}_FUNDER`];
 
         // Use per-bot CLOB credentials, fall back to global BOT_1 key
-        const apiKey     = process.env[`BOT_${i}_CLOB_API_KEY`]    || process.env.CLOB_API_KEY;
-        const secret     = process.env[`BOT_${i}_CLOB_SECRET`]     || process.env.CLOB_SECRET;
+        const apiKey = process.env[`BOT_${i}_CLOB_API_KEY`] || process.env.CLOB_API_KEY;
+        const secret = process.env[`BOT_${i}_CLOB_SECRET`] || process.env.CLOB_SECRET;
         const passphrase = process.env[`BOT_${i}_CLOB_PASSPHRASE`] || process.env.CLOB_PASSPHRASE;
 
         if (!pkey || !apiKey || !secret || !passphrase) continue;

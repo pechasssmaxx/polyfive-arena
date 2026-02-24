@@ -210,13 +210,12 @@ const PerformanceChart = ({ equityData = [], modelStats = [] }: PerformanceChart
     };
     const span = spanMap[timeRange] || spanMap['1H'];
 
-    // Instead of looking backwards from 'Now', 
-    // we take 'Now', look back 'span', but NEVER go before firstTime.
-    const start = Math.max(lastTime - span, firstTime);
+    // End at the last actual point in processedData if possible
+    const lastPoint = processedData[processedData.length - 1];
+    const chartEnd = lastPoint ? lastPoint.timestamp : lastTime;
 
-    // Right bound should always comfortably fit the present moment + a slight padding 
-    // or the full span if it's very early.
-    const end = Math.max(start + span, lastTime);
+    const start = Math.max(chartEnd - span, firstTime);
+    const end = Math.max(start + span, chartEnd);
 
     return [start, end];
   }, [timeRange, processedData]);

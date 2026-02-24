@@ -14,7 +14,7 @@ import { executeCopyTrade, executeCloseTrade } from './realTrader.js';
 import { DONOR_ONCHAIN_WALLETS } from '../../src/data/constants.js';
 
 // Polymarket exchange contracts on Polygon (Mainnet)
-const CTF_EXCHANGE     = '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E';
+const CTF_EXCHANGE = '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E';
 const NEGRISK_EXCHANGE = '0xC5d563A36AE78145C45a50134d48A1215220f80a';
 
 const ORDER_FILLED_ABI = [
@@ -53,7 +53,7 @@ async function lookupTokenId(tokenId: string): Promise<{ conditionId: string; ou
         const tokenIds: string[] = market.clobTokenIds
             ?? (Array.isArray(market.tokens) ? market.tokens.map((t: any) =>
                 typeof t === 'string' ? t : (t.token_id ?? t.tokenId ?? ''))
-            : []);
+                : []);
         const outcomeIndex = tokenIds.indexOf(tokenId);
 
         const result = { conditionId, outcomeIndex: outcomeIndex === -1 ? 0 : outcomeIndex };
@@ -95,8 +95,8 @@ async function processOrderFilled(
 
     // USDC amount (1e6 units) / CTF amount (1e6 units) = price per share
     const usdcAmount = makerIsUsdc ? makerAmountFilled : takerAmountFilled;
-    const ctfAmount  = makerIsUsdc ? takerAmountFilled : makerAmountFilled;
-    const tokenId    = (makerIsUsdc ? takerAssetId : makerAssetId).toString();
+    const ctfAmount = makerIsUsdc ? takerAmountFilled : makerAmountFilled;
+    const tokenId = (makerIsUsdc ? takerAssetId : makerAssetId).toString();
 
     if (ctfAmount === 0n) return;
     const price = Number(usdcAmount) / Number(ctfAmount);
@@ -181,8 +181,8 @@ export function startOnChainListener(): void {
             ).catch((e: any) => console.error('[OnChain] processOrderFilled error:', e.message));
         };
 
-        const ctfContract     = new ethers.Contract(CTF_EXCHANGE,     ORDER_FILLED_ABI, provider);
-        const negRiskContract  = new ethers.Contract(NEGRISK_EXCHANGE, ORDER_FILLED_ABI, provider);
+        const ctfContract = new ethers.Contract(CTF_EXCHANGE, ORDER_FILLED_ABI, provider);
+        const negRiskContract = new ethers.Contract(NEGRISK_EXCHANGE, ORDER_FILLED_ABI, provider);
 
         ctfContract.on('OrderFilled', makeListener);
         negRiskContract.on('OrderFilled', makeListener);
