@@ -38,12 +38,8 @@ const EndLabels = (props: any) => {
 
       const targetY = ot + (yAxis.scale(chartVal) ?? 0);
 
-      // Calculate X based on index within the visible data set
-      const totalPoints = processedData.length;
-      const chartW = offset?.width ?? 500;
-      const leftGap = offset?.left ?? 0;
-
-      const targetX = leftGap + (lastIdx / Math.max(1, totalPoints - 1)) * chartW;
+      // Use Recharts scale to find X position of the last point
+      const targetX = (xAxis.scale(lastPoint.timestamp) ?? 0);
 
       return { ...m, displayVal: chartVal, targetY, targetX, hasChartLine: true };
     })
@@ -233,6 +229,7 @@ const PerformanceChart = ({ equityData = [], modelStats = [] }: PerformanceChart
           <LineChart data={processedData} margin={{ top: 20, right: 110, left: 10, bottom: 5 }} style={{ overflow: 'visible' }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
             <XAxis
+              dataKey="timestamp"
               hide={true}
             />
             <YAxis
