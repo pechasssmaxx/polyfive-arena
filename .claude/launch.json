@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (Vite)",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "npm", "run", "dev"],
+      "port": 8080
+    },
+    {
+      "name": "Backend (Node/tsx)",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "npm", "run", "server:dev"],
+      "port": 3001
+    }
+  ]
+}
