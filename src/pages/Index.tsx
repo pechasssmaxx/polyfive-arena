@@ -244,7 +244,7 @@ const Index = () => {
           <ResizablePanel defaultSize={28} minSize={20}>
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel defaultSize={60} minSize={30}>
-                <ActivePositions activeTab={rightTab} onTabChange={setRightTab} trades={trades} />
+                <ActivePositions activeTab={rightTab} onTabChange={setRightTab} trades={trades} modelStats={modelStats} />
               </ResizablePanel>
               <ResizableHandle className="h-px bg-border hover:bg-muted-foreground transition-colors" />
               <ResizablePanel defaultSize={40} minSize={20}>

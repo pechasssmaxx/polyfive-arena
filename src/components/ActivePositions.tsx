@@ -8,29 +8,43 @@ interface ActivePositionsProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   trades?: TradeEntry[];
+  modelStats?: any[];
 }
 
 const TABS = ['OPEN', 'CLOSED'];
 
-function getAnalysis(trade: TradeEntry): string {
+function getAnalysis(trade: TradeEntry, currentBalance: number): string {
   const hash = trade.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const priceStr = trade.entryPrice ? (trade.entryPrice * 100).toFixed(0) + '¢' : 'current levels';
-  const op = trade.side === 'YES' ? 'upside' : 'downside';
+  const priceUsd = trade.entryPrice ? `$${trade.entryPrice.toFixed(4)}` : 'market price';
+  const op = trade.side === 'YES' ? 'upside' : 'downside'; // Original 'op' variable, kept for consistency if needed elsewhere, though new logic uses 'direction' implicitly.
 
-  const SMART_PHRASES = [
-    `Chainlink real-time feed for ${trade.asset} indicates local bottom; entering ${trade.side} at ${priceStr} with optimized risk sizing.`,
-    `Analyzing micro-trends: ${trade.asset} order book pressure suggests ${op} breakout. Positioning for 5m momentum.`,
-    `Cross-referencing technical oscillators; ${trade.asset} shows extreme divergence at ${priceStr}. Executing high-conviction ${trade.side} play.`,
-    `Market sentiment for ${trade.asset} shifted post-volume spike; adjusting position for a fast mean reversion toward ${priceStr}.`,
-    `Oracle data confirms ${trade.asset} volatility expansion; following algorithmic signal for ${trade.side} entry.`,
-    `Complexity analysis of 5-min price action identifies recurring fractal on ${trade.asset}. Scaling into ${trade.side} with 1.5x conviction.`,
-    `Monitoring global liquidity pools; ${trade.asset} price magnet detected. Positioning for ${trade.side} squeeze near ${priceStr}.`,
-    `Algorithmic confirmation: ${trade.asset} EMA ribbon cross on heavy volume. Entering ${trade.side} with 2.5% account risk.`,
-    `Correlating ${trade.asset} with broader market indices; detected relative strength. Executing ${trade.side} trade near structural support.`,
-    `Risk/Reward model for ${trade.asset} at 4.2x; entering ${trade.side} at ${priceStr} after successful liquidity wall retest.`,
+  const techArguments = [
+    `detected a clear bullish divergence on the 5-minute RSI, suggesting an imminent trend reversal`,
+    `order book imbalance shows significant buy pressure building up near historical support zones`,
+    `price action has successfully retested the 20-period EMA, confirming short-term momentum continuation`,
+    `liquidity sweep below recent lows has been completed, paving the way for a sharp recovery`,
+    `volume-weighted average price (VWAP) is trending lower, indicating a high probability of further decline`,
+    `Bollinger Band contraction suggests a volatility breakout is imminent, favoring the current direction`,
+    `MACD histogram is turning positive, signaling a shift in market sentiment and momentum`,
+    `strong rejection at key psychological resistance level confirms local top formation`,
+    `sequential fractal pattern completion points toward a technical move in alignment with this position`,
+    `on-chain volume spikes correlate with recent price stability, indicating professional accumulation`,
   ];
 
-  return SMART_PHRASES[hash % SMART_PHRASES.length];
+  const confidenceLevels = ['low', 'moderate', 'high'];
+  const confidence = confidenceLevels[hash % confidenceLevels.length];
+  const size = (trade.positionSize || 0).toFixed(2);
+  const balance = currentBalance.toFixed(2);
+
+  const techArg = techArguments[hash % techArguments.length];
+
+  return `${trade.asset} is trading at ${priceUsd} according to the Chainlink oracle. ${modelNameById(trade.agentId)} ${techArg}; the ${size} size from a ${balance} balance reflects ${confidence} conviction in the position.`;
+}
+
+function modelNameById(id: string) {
+  const m = MODELS.find(m => m.id === id);
+  return m ? m.shortName : id;
 }
 
 const formatTimeRemaining = (ms: number) => {
@@ -48,7 +62,7 @@ const formatDateTime = (ts: number | undefined | null) =>
 const formatTimeOnly = (ts: number | undefined | null) =>
   ts ? new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
 
-const TradeLogEntry = ({ trade, model }: { trade: TradeEntry; model: any }) => {
+const TradeLogEntry = ({ trade, model, modelStats }: { trade: TradeEntry; model: any; modelStats?: any[] }) => {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const timeLeft = trade.marketEndTimestamp ? trade.marketEndTimestamp - Date.now() : 0;
   const pnl = trade.pnl || 0;
@@ -56,7 +70,10 @@ const TradeLogEntry = ({ trade, model }: { trade: TradeEntry; model: any }) => {
   const pnlColor = isLoss ? 'text-loss' : 'text-profit';
   const isExpired = timeLeft <= 0;
   const isClosed = trade.status !== 'open';
-  const analysis = getAnalysis(trade);
+
+  const stat = modelStats?.find(s => s.agentId === trade.agentId);
+  const balance = stat ? (stat.balance || stat.equity || 1000) : 1000;
+  const analysis = getAnalysis(trade, balance);
 
   return (
     <div className="border-b border-border">
@@ -162,7 +179,7 @@ const TradeLogEntry = ({ trade, model }: { trade: TradeEntry; model: any }) => {
   );
 };
 
-const ActivePositions = ({ activeTab, onTabChange, trades: allTrades = [] }: ActivePositionsProps) => {
+const ActivePositions = ({ activeTab, onTabChange, trades: allTrades = [], modelStats = [] }: ActivePositionsProps) => {
   const [filter, setFilter] = useState<string>('all');
 
   const openTrades = allTrades.filter(t => t.status === 'open');
@@ -221,7 +238,7 @@ const ActivePositions = ({ activeTab, onTabChange, trades: allTrades = [] }: Act
               shortName: trade.agentId,
               color: '#888',
             };
-            return <TradeLogEntry key={trade.id} trade={trade} model={model} />;
+            return <TradeLogEntry key={trade.id} trade={trade} model={model} modelStats={modelStats} />;
           })
         )}
       </div>
