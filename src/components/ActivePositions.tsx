@@ -9,37 +9,68 @@ interface ActivePositionsProps {
   onTabChange: (tab: string) => void;
   trades?: TradeEntry[];
   modelStats?: any[];
+  prices?: any[];
 }
 
 const TABS = ['OPEN', 'CLOSED'];
 
-function getAnalysis(trade: TradeEntry, currentBalance: number): string {
+function getAnalysis(trade: TradeEntry, currentBalance: number, prices: any[]): string {
   const hash = trade.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const priceStr = trade.entryPrice ? (trade.entryPrice * 100).toFixed(0) + '¢' : 'current levels';
-  const priceUsd = trade.entryPrice ? `$${trade.entryPrice.toFixed(4)}` : 'market price';
-  const op = trade.side === 'YES' ? 'upside' : 'downside'; // Original 'op' variable, kept for consistency if needed elsewhere, though new logic uses 'direction' implicitly.
+  const assetData = prices?.find(p => p.symbol === trade.asset);
+  const realPriceUsd = assetData ? assetData.price.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '---';
+  const dir = trade.direction;
 
-  const techArguments = [
-    `detected a clear bullish divergence on the 5-minute RSI, suggesting an imminent trend reversal`,
-    `order book imbalance shows significant buy pressure building up near historical support zones`,
-    `price action has successfully retested the 20-period EMA, confirming short-term momentum continuation`,
-    `liquidity sweep below recent lows has been completed, paving the way for a sharp recovery`,
-    `volume-weighted average price (VWAP) is trending lower, indicating a high probability of further decline`,
-    `Bollinger Band contraction suggests a volatility breakout is imminent, favoring the current direction`,
-    `MACD histogram is turning positive, signaling a shift in market sentiment and momentum`,
-    `strong rejection at key psychological resistance level confirms local top formation`,
-    `sequential fractal pattern completion points toward a technical move in alignment with this position`,
-    `on-chain volume spikes correlate with recent price stability, indicating professional accumulation`,
+  // Confidence calculation: <1% low, 1-3% moderate, >3% high
+  const riskRatio = trade.positionSize / (currentBalance || 1000);
+  let confidence = 'moderate';
+  if (riskRatio < 0.01) confidence = 'low';
+  else if (riskRatio > 0.03) confidence = 'high';
+
+  const size = (trade.positionSize || 0).toFixed(2);
+  const balance = (currentBalance || 1000).toFixed(2);
+
+  const TECHNICAL = [
+    `price is currently ${dir === 'UP' ? 'rejecting low-volume support' : 'approaching key intraday resistance'} with high precision`,
+    `detected a clear momentum continuation following a sharp ${dir === 'UP' ? 'upside breakout' : 'downside break'} on the 5m frame`,
+    `positioning for a mean-reversion move after the recent overextended vol spike at these levels`,
+    `observed bid/ask compression near the current price signaling an imminent structural resolution`,
+    `low-volume consolidation phase is nearing completion; anticipating a clean directional resolution`
   ];
 
-  const confidenceLevels = ['low', 'moderate', 'high'];
-  const confidence = confidenceLevels[hash % confidenceLevels.length];
-  const size = (trade.positionSize || 0).toFixed(2);
-  const balance = currentBalance.toFixed(2);
+  const SENTIMENT = [
+    `crowd positioning is heavily skewed toward the weak side`,
+    `funding narratives appear significantly overextended at this junction`,
+    `reflexive consensus is rapidly forming against the current price action`,
+    `retail flow is becoming increasingly one-sided on the short-term tape`
+  ];
 
-  const techArg = techArguments[hash % techArguments.length];
+  const DISCLAIMERS = [
+    `execution is strictly probabilistic based on local Alpha metrics.`,
+    `risk management remains the primary priority for this exposure.`,
+    `position assumes continued liquidity availability at the clearing price.`,
+    `final resolution subject to systemic tail-risk adjustments.`
+  ];
 
-  return `${trade.asset} is trading at ${priceUsd} according to the Chainlink oracle. ${modelNameById(trade.agentId)} ${techArg}; the ${size} size from a ${balance} balance reflects ${confidence} conviction in the position.`;
+  const PERSONALITY: Record<string, string> = {
+    claude: "mispriced overshoot",
+    chatgpt: "professional risk-adjusted",
+    gemini: "historically correlated",
+    grok: "CT narrative exhaustion",
+    deepseek: "EV+ Kelly-sized"
+  };
+
+  const tech = TECHNICAL[hash % TECHNICAL.length];
+  const sent = SENTIMENT[hash % SENTIMENT.length];
+  const disc = DISCLAIMERS[hash % DISCLAIMERS.length];
+  const trait = PERSONALITY[trade.agentId.toLowerCase()] || "systemic";
+
+  // Sentence 1: TECHNICAL
+  const s1 = `${trade.asset} is trading at $${realPriceUsd} according to the Chainlink live oracle. Entry logic finalized as ${tech}.`;
+
+  // Sentence 2: SENTIMENT + DISCLAIMER
+  const s2 = `With ${sent}, this ${trait} position sized at $${size} from a $${balance} balance reflects ${confidence} confidence; ${disc}`;
+
+  return `${s1} ${s2}`;
 }
 
 function modelNameById(id: string) {
@@ -62,7 +93,7 @@ const formatDateTime = (ts: number | undefined | null) =>
 const formatTimeOnly = (ts: number | undefined | null) =>
   ts ? new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
 
-const TradeLogEntry = ({ trade, model, modelStats }: { trade: TradeEntry; model: any; modelStats?: any[] }) => {
+const TradeLogEntry = ({ trade, model, modelStats, prices }: { trade: TradeEntry; model: any; modelStats?: any[]; prices?: any[] }) => {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const timeLeft = trade.marketEndTimestamp ? trade.marketEndTimestamp - Date.now() : 0;
   const pnl = trade.pnl || 0;
@@ -73,7 +104,7 @@ const TradeLogEntry = ({ trade, model, modelStats }: { trade: TradeEntry; model:
 
   const stat = modelStats?.find(s => s.agentId === trade.agentId);
   const balance = stat ? (stat.balance || stat.equity || 1000) : 1000;
-  const analysis = getAnalysis(trade, balance);
+  const analysis = getAnalysis(trade, balance, prices || []);
 
   return (
     <div className="border-b border-border">
@@ -179,7 +210,7 @@ const TradeLogEntry = ({ trade, model, modelStats }: { trade: TradeEntry; model:
   );
 };
 
-const ActivePositions = ({ activeTab, onTabChange, trades: allTrades = [], modelStats = [] }: ActivePositionsProps) => {
+const ActivePositions = ({ activeTab, onTabChange, trades: allTrades = [], modelStats = [], prices = [] }: ActivePositionsProps) => {
   const [filter, setFilter] = useState<string>('all');
 
   const openTrades = allTrades.filter(t => t.status === 'open');
@@ -238,7 +269,7 @@ const ActivePositions = ({ activeTab, onTabChange, trades: allTrades = [], model
               shortName: trade.agentId,
               color: '#888',
             };
-            return <TradeLogEntry key={trade.id} trade={trade} model={model} modelStats={modelStats} />;
+            return <TradeLogEntry key={trade.id} trade={trade} model={model} modelStats={modelStats} prices={prices} />;
           })
         )}
       </div>
