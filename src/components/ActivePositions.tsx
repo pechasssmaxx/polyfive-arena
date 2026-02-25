@@ -29,48 +29,85 @@ function getAnalysis(trade: TradeEntry, currentBalance: number, prices: any[]): 
   const size = (trade.positionSize || 0).toFixed(2);
   const balance = (currentBalance || 1000).toFixed(2);
 
-  const TECHNICAL = [
-    `price is currently ${dir === 'UP' ? 'rejecting low-volume support' : 'approaching key intraday resistance'} with high precision`,
-    `detected a clear momentum continuation following a sharp ${dir === 'UP' ? 'upside breakout' : 'downside break'} on the 5m frame`,
-    `positioning for a mean-reversion move after the recent overextended vol spike at these levels`,
-    `observed bid/ask compression near the current price signaling an imminent structural resolution`,
-    `low-volume consolidation phase is nearing completion; anticipating a clean directional resolution`
+  // ── Vocabulary Banks ──
+
+  const OBSERVATIONS = [
+    `price interaction with structural liquidity`,
+    `volatility compression on the micro-timeframe`,
+    `orderbook imbalance skewing ${dir === 'UP' ? 'bids' : 'asks'}`,
+    `algorithmic front-running ahead of macro catalysts`,
+    `anomalous momentum divergence relative to implied vol`,
+    `mean-reversion exhaustion at the key standard deviation band`,
+    `local flow toxicity indicating retail offsides positioning`,
+    `persistent VWAP rejection on the 5-minute aggregation`,
+    `delta-hedging flow accelerating directional bias`,
+    `suppressed implied volatility signaling imminent expansion`
   ];
 
-  const SENTIMENT = [
-    `crowd positioning is heavily skewed toward the weak side`,
-    `funding narratives appear significantly overextended at this junction`,
-    `reflexive consensus is rapidly forming against the current price action`,
-    `retail flow is becoming increasingly one-sided on the short-term tape`
+  const ACTIONS = [
+    `Exec logic engaged on confirmation of the aforementioned signal.`,
+    `Capital deployed optimally to front-run the anticipated retail sweep.`,
+    `Entry validated by secondary delta metrics crossing the threshold.`,
+    `Execution routed sequentially to minimize slippage impact.`,
+    `Alpha captured as market clears localized inefficiency.`,
+    `Position initiated targeting strict asymmetric payoff.`,
+    `Automated execution fired on liquidity vacuum detection.`,
+    `Strategic allocation captured at optimal implied odds.`,
+    `Deployment sequenced exactly as statistical bounds breach.`,
+    `Exposure assumed based on multi-variate signal convergence.`
   ];
 
-  const DISCLAIMERS = [
-    `execution is strictly probabilistic based on local Alpha metrics.`,
-    `risk management remains the primary priority for this exposure.`,
-    `position assumes continued liquidity availability at the clearing price.`,
-    `final resolution subject to systemic tail-risk adjustments.`
+  const REASONINGS = [
+    `Given the current macro headwind`,
+    `Accounting for recent CTA liquidations`,
+    `Based purely on structural imbalance`,
+    `Ignoring the obvious retail consensus`,
+    `Leveraging historical fractal overlays`,
+    `Factoring in aggressive taker flow`,
+    `Given the rapid decay in funding basis`,
+    `Driven implicitly by skewed options gamma`,
+    `As dictated by our local stochastic model`,
+    `Exploiting the temporary illiquidity premium`
   ];
 
-  const PERSONALITY: Record<string, string> = {
-    claude: "mispriced overshoot",
-    chatgpt: "professional risk-adjusted",
-    gemini: "historically correlated",
-    grok: "CT narrative exhaustion",
-    deepseek: "EV+ Kelly-sized"
+  const TRAITS: Record<string, string> = {
+    claude: "arbitrage-focused",
+    chatgpt: "mathematically-rigorous",
+    gemini: "velocity-driven",
+    grok: "contrarian-engineered",
+    deepseek: "probability-maximized"
   };
 
-  const tech = TECHNICAL[hash % TECHNICAL.length];
-  const sent = SENTIMENT[hash % SENTIMENT.length];
-  const disc = DISCLAIMERS[hash % DISCLAIMERS.length];
-  const trait = PERSONALITY[trade.agentId.toLowerCase()] || "systemic";
+  const ENDINGS = [
+    `— standard parameters apply.`,
+    `— risk normalized actively.`,
+    `— downside strictly collared.`,
+    `— expecting prompt resolution.`,
+    `— alpha decay measured tight.`
+  ];
 
-  // Sentence 1: TECHNICAL
-  const s1 = `${trade.asset} is trading at $${realPriceUsd} according to the Chainlink live oracle. Entry logic finalized as ${tech}.`;
+  const obs = OBSERVATIONS[hash % OBSERVATIONS.length];
+  const act = ACTIONS[hash % ACTIONS.length];
+  const rsn = REASONINGS[hash % REASONINGS.length];
+  const end = ENDINGS[hash % ENDINGS.length];
+  const trait = TRAITS[trade.agentId.toLowerCase()] || "systemic";
 
-  // Sentence 2: SENTIMENT + DISCLAIMER
-  const s2 = `With ${sent}, this ${trait} position sized at $${size} from a $${balance} balance reflects ${confidence} confidence; ${disc}`;
+  // ── Template Selection ──
+  // Based on hash, pick 1 of 3 paragraph structures to ensure high variety
+  const templateType = hash % 3;
 
-  return `${s1} ${s2}`;
+  let text = '';
+  const priceStr = realPriceUsd !== '---' ? `$${realPriceUsd}` : 'current spot';
+
+  if (templateType === 0) {
+    text = `Binance oracle records ${trade.asset} near ${priceStr}. Core telemetry identifies ${obs}. ${act} ${rsn}, sizing this ${trait} block at $${size} aligns with ${confidence} confidence ${end}`;
+  } else if (templateType === 1) {
+    text = `Detecting ${obs} with ${trade.asset} clearing at ${priceStr}. ${rsn}, our internal models project immediate structural advantage. This $${size} ${trait} deployment reflects ${confidence} conviction ${end}`;
+  } else {
+    text = `Asset ${trade.asset} pinned at ${priceStr} via Binance bridge. Evaluated ${obs} in real-time. ${act} A $${size} capital commitment ($${balance} equity base) is deemed a ${confidence}-confidence ${trait} play ${end}`;
+  }
+
+  return text;
 }
 
 function modelNameById(id: string) {
