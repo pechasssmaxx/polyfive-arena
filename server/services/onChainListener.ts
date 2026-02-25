@@ -139,6 +139,10 @@ async function processOrderFilled(
 }
 
 export function startOnChainListener(): void {
+    // --- COPYTRADING DISABLED PER USER REQUEST ---
+    console.log('[OnChain] Copytrading disabled — skipping on-chain listener');
+    return;
+
     const donorSet = new Set(
         DONOR_ONCHAIN_WALLETS.filter(w => /^0x[0-9a-fA-F]{40}$/.test(w)).map(w => w.toLowerCase())
     );

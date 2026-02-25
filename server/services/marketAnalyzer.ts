@@ -113,68 +113,82 @@ export async function startMarketAnalyzerSocket() {
     // Poll for resolution every 15 seconds (5m markets resolve fast)
     setInterval(checkMarketResolutions, 15_000);
 
-    // Start WebSocket as primary — near-instant event delivery (~0.5–2s latency)
-    startDonorWebSocket();
+    // --- COPYTRADING DISABLED PER USER REQUEST ---
+    // startDonorWebSocket();
 
-    // Initial catchup poll — grab any trades that happened before WS connected
-    await pollDonors();
-    // Backup polling every 3s — catches events missed during WS gaps/reconnects
-    setInterval(pollDonors, 3_000);
+    // Start polling ONLY for our own proxy wallets (to detect manual trades)
+    await pollOwnWallets();
+    setInterval(pollOwnWallets, 3_000);
 }
 
 // ─── WebSocket real-time stream (PRIMARY) ─────────────────────────────────────
 
 function startDonorWebSocket() {
-    const wsClient = new RealTimeDataClient({
-        autoReconnect: true,
-        onConnect: (client) => {
-            console.log('[WS] ✅ Connected to Polymarket real-time stream');
-            client.subscribe({
-                subscriptions: [
-                    // All global trades — we filter by proxyWallet client-side
-                    { topic: 'activity', type: 'trades' },
-                    { topic: 'activity', type: 'orders_matched' },
-                ],
-            });
-        },
-        onMessage: (_client, msg: any) => {
-            if (msg.topic !== 'activity') return;
+    let wsClient: RealTimeDataClient;
+    let reconnectAttempts = 0;
 
-            const trade = msg.payload as any;
-            const rawWallet: string = trade.proxyWallet ?? '';
-            if (!rawWallet) return;
+    function connectWithBackoff() {
+        wsClient = new RealTimeDataClient({
+            autoReconnect: false, // We handle it manually to prevent 429s
+            onConnect: (client) => {
+                reconnectAttempts = 0;
+                console.log('[WS] ✅ Connected to Polymarket real-time stream');
+                client.subscribe({
+                    subscriptions: [
+                        { topic: 'activity', type: 'trades' },
+                        { topic: 'activity', type: 'orders_matched' },
+                    ],
+                });
+            },
+            onMessage: (_client, msg: any) => {
+                if (msg.topic !== 'activity') return;
 
-            // Fast O(1) check — donor copy wallet OR own proxy wallet
-            const walletLower = rawWallet.toLowerCase();
-            if (!donorWalletSet.has(walletLower) && !ownWalletSet.has(walletLower)) return;
+                const trade = msg.payload as any;
+                const rawWallet: string = trade.proxyWallet ?? '';
+                if (!rawWallet) return;
 
-            console.log(`[WS] ⚡ LIVE event from donor ${walletLower.slice(0, 10)}...`);
+                const walletLower = rawWallet.toLowerCase();
+                if (!donorWalletSet.has(walletLower) && !ownWalletSet.has(walletLower)) return;
 
-            // Advance cursor so backup poll skips already-seen events
-            if (trade.timestamp) {
-                const current = lastSeenTs.get(walletLower) ?? 0;
-                if (trade.timestamp > current) {
-                    lastSeenTs.set(walletLower, trade.timestamp);
+                console.log(`[WS] ⚡ LIVE event from donor ${walletLower.slice(0, 10)}...`);
+
+                if (trade.timestamp) {
+                    const current = lastSeenTs.get(walletLower) ?? 0;
+                    if (trade.timestamp > current) {
+                        lastSeenTs.set(walletLower, trade.timestamp);
+                    }
                 }
-            }
 
-            handleActivityEvent(walletLower, trade);
-        },
-        onStatusChange: (status: any) => {
-            console.log(`[WS] Status: ${status}`);
-        },
-    });
+                handleActivityEvent(walletLower, trade);
+            },
+            onStatusChange: (status: any) => {
+                console.log(`[WS] Status: ${status}`);
+                if (status === 'DISCONNECTED') {
+                    // Exponential backoff logic
+                    reconnectAttempts++;
+                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 60000);
+                    console.warn(`[WS] ⚠️ Disconnected. Reconnecting in ${delay / 1000}s...`);
+                    setTimeout(() => {
+                        console.log(`[WS] 🔄 Attempting to reconnect... (Attempt ${reconnectAttempts})`);
+                        connectWithBackoff();
+                    }, delay);
+                }
+            },
+        });
 
-    wsClient.connect();
-    return wsClient;
+        wsClient.connect();
+    }
+
+    connectWithBackoff();
+    // Return a dummy object or the current client if needed, though usually not strictly required here
+    return { connect: () => { } };
 }
 
 // ─── Real Gamma API polling ───────────────────────────────────────────────────
 
-async function pollDonors() {
-    // Poll donor wallets + own proxy wallets (deduped)
-    const allWallets = [...new Set([...liveDonorWallets, ...ownProxyWalletsList])];
-    for (const wallet of allWallets) {
+async function pollOwnWallets() {
+    // Poll ONLY own proxy wallets to detect manual trades by the user
+    for (const wallet of ownProxyWalletsList) {
         if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) continue;
         try {
             await pollWallet(wallet);
