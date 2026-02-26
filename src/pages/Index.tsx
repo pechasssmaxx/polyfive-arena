@@ -35,6 +35,7 @@ const Index = () => {
   const [prices, setPrices] = useState<any[]>([]);
   const [equityData, setEquityData] = useState<any[]>([]);
   const [trades, setTrades] = useState<any[]>([]);
+  const [caAddress, setCaAddress] = useState<string>('by polymarket');
 
   // Initialize empty stats if none provided by backend yet
   const [modelStats, setModelStats] = useState<any[]>(
@@ -81,6 +82,14 @@ const Index = () => {
     // Fetch immediately, then every 15s as backup (SSE handles real-time)
     fetchData();
     const timer = setInterval(fetchData, 15_000);
+
+    // Fetch settings
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.caAddress) setCaAddress(data.caAddress);
+      })
+      .catch(() => { });
 
     // SSE — instant push when trade opens/closes or balances update
     const es = new EventSource(`${url}/api/events`);
@@ -142,7 +151,7 @@ const Index = () => {
         <div className="flex items-center gap-2">
           <img src="/logo-5.png" alt="Logo" className="w-8 h-8 object-contain" />
           <h1 className="text-lg font-bold tracking-tight uppercase">Polyfive</h1>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">by polymarket</span>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{caAddress}</span>
         </div>
         <div className="flex items-center gap-0">
           <nav className="hidden md:flex items-center gap-0 text-xs uppercase tracking-wider">

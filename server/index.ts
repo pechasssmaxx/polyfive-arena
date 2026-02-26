@@ -30,7 +30,7 @@ process.on('uncaughtException', (err: Error) => {
 import express from 'express';
 import cors from 'cors';
 
-import { initializeAgents, syncClobBalances, getAllTrades, getAllAgentStats, getRecentEquity, clearAllData, recordEquitySnapshot } from './models/db.js';
+import { initializeAgents, syncClobBalances, getAllTrades, getAllAgentStats, getRecentEquity, clearAllData, recordEquitySnapshot, getSetting, updateSetting } from './models/db.js';
 import { addSSEClient, pushStatsUpdate } from './sse.js';
 import { startMarketAnalyzerSocket, setBalanceSyncFn, reloadDonors } from './services/marketAnalyzer.js';
 import { initRealTrader, getAllClobBalances } from './services/realTrader.js';
@@ -183,6 +183,29 @@ app.post('/api/admin/donors', (req, res) => {
         res.json({ ok: true, active: donors.filter((d: any) => /^0x[0-9a-fA-F]{40}$/.test(d.proxyWallet)).length });
     } catch (e: any) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+// Settings API
+app.get('/api/settings', (_req, res) => {
+    res.json({
+        caAddress: getSetting('CA_ADDRESS')
+    });
+});
+
+app.post('/api/settings', (req, res) => {
+    const pw = (req.headers['x-admin-password'] as string) ?? (req.body?.password as string) ?? '';
+    const expected = process.env.ADMIN_PASSWORD ?? '';
+    if (expected && pw !== expected) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+    const { caAddress } = req.body;
+    if (typeof caAddress === 'string') {
+        updateSetting('CA_ADDRESS', caAddress);
+        res.json({ ok: true });
+    } else {
+        res.status(400).json({ error: 'Invalid caAddress' });
     }
 });
 

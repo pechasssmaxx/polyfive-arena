@@ -90,7 +90,29 @@ db.exec(`
         wins INTEGER,
         losses INTEGER
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    );
 `);
+
+// --- Settings API ---
+export function getSetting(key: string): string | null {
+    const stmt = db.prepare('SELECT value FROM settings WHERE key = ?');
+    const row = stmt.get(key) as { value: string } | undefined;
+    return row ? row.value : null;
+}
+
+export function updateSetting(key: string, value: string) {
+    const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+    stmt.run(key, value);
+}
+
+// Initialize CA_ADDRESS
+if (getSetting('CA_ADDRESS') === null) {
+    updateSetting('CA_ADDRESS', 'by polymarket');
+}
 
 // --- Initialize / Seed Agents ---
 export function initializeAgents(agentIds: string[]) {
