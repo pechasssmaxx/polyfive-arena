@@ -108,7 +108,7 @@ const FiveTokenInfo = ({ onClose }: FiveTokenInfoProps) => {
                             <ExternalLink size={10} className="text-muted-foreground group-hover:text-foreground" />
                         </a>
                         <a
-                            href="https://polyfive.arena"
+                            href="https://polyfive.fun/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between p-3 border border-border hover:bg-accent/30 transition-colors group"
