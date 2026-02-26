@@ -5,6 +5,7 @@ import ActivePositions from '@/components/ActivePositions';
 import TradeHistory from '@/components/TradeHistory';
 import DecisionFeed from '@/components/DecisionFeed';
 import Leaderboard from '@/components/Leaderboard';
+import FiveTokenInfo from '@/components/FiveTokenInfo';
 import { MODEL_LOGOS, CRYPTO_LOGOS } from '@/assets/logos';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { toast, Toaster } from 'sonner';
@@ -27,6 +28,7 @@ const Index = () => {
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [rightTab, setRightTab] = useState('OPEN');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showFiveInfo, setShowFiveInfo] = useState(false);
 
   // REST API Data States
   const [connected, setConnected] = useState(false);
@@ -130,9 +132,15 @@ const Index = () => {
           onClose={() => setShowLeaderboard(false)}
         />
       )}
+      {showFiveInfo && (
+        <FiveTokenInfo
+          onClose={() => setShowFiveInfo(false)}
+        />
+      )}
       {/* NAV — full width, single row */}
       <div className="flex items-center justify-between px-5 py-2.5">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <img src="/logo-5.png" alt="Logo" className="w-8 h-8 object-contain" />
           <h1 className="text-lg font-bold tracking-tight uppercase">Polyfive</h1>
           <span className="text-[10px] text-muted-foreground uppercase tracking-widest">by polymarket</span>
         </div>
@@ -142,7 +150,12 @@ const Index = () => {
             <span className="text-muted-foreground px-1">|</span>
             <span className="text-muted-foreground px-4 py-1.5 hover:text-foreground cursor-pointer transition-colors" onClick={() => setShowLeaderboard(true)}>Leaderboard</span>
             <span className="text-muted-foreground px-1">|</span>
-            <span className="text-muted-foreground px-4 py-1.5 hover:text-foreground cursor-pointer transition-colors">$FIVE</span>
+            <span
+              className="text-muted-foreground px-4 py-1.5 hover:text-foreground cursor-pointer transition-colors"
+              onClick={() => setShowFiveInfo(true)}
+            >
+              $FIVE
+            </span>
           </nav>
 
           {/* Connection status indicator */}
