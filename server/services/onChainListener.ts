@@ -128,7 +128,7 @@ async function processOrderFilled(
     try {
         if (side === 'BUY') {
             console.log(`[OnChain] 🚀 Pre-executing BUY ${conditionId.slice(0, 10)}... outcome=${outcomeIndex}`);
-            await executeCopyTrade('claude', conditionId, outcomeIndex, price, COPY_SIZE_USDC, tokenId);
+            await executeCopyTrade('claude', conditionId, outcomeIndex, price, Number(usdcAmount) / 1_000_000, tokenId);
         } else {
             console.log(`[OnChain] 🚀 Pre-executing SELL ${conditionId.slice(0, 10)}... outcome=${outcomeIndex}`);
             await executeCloseTrade('claude', conditionId, outcomeIndex, price, tokenId);

@@ -310,7 +310,12 @@ function handleSelfTrade(wallet: string, event: any) {
             return;
         }
 
-        const positionSize = parseFloat((1.1 + Math.random() * 0.2).toFixed(2));
+        // Use real size from event if available, otherwise calculate from (amount or size) * price, or fallback to random
+        const positionSize = event.usdSize
+            ? parseFloat(event.usdSize)
+            : (event.amount || event.size) && event.price
+                ? parseFloat(((event.amount || event.size) * event.price).toFixed(2))
+                : parseFloat((1.1 + Math.random() * 0.2).toFixed(2));
 
         const trade: TradeEntry & { conditionId: string; outcomeIndex: number } = {
             id: tradeId, agentId, donorWallet: wallet, asset,
@@ -411,7 +416,12 @@ function handleActivityEvent(wallet: string, event: any) {
 
             processingEntryKeys.add(positionKeyForAgent);
 
-            const positionSize = parseFloat((1.1 + Math.random() * 0.2).toFixed(2));
+            // Use real size from event if available, otherwise calculate from (amount or size) * price, or fallback to random
+            const positionSize = event.usdSize
+                ? parseFloat(event.usdSize)
+                : (event.amount || event.size) && event.price
+                    ? parseFloat(((event.amount || event.size) * event.price).toFixed(2))
+                    : parseFloat((1.1 + Math.random() * 0.2).toFixed(2));
 
             const trade: TradeEntry & { conditionId: string; outcomeIndex: number } = {
                 id: tradeId,

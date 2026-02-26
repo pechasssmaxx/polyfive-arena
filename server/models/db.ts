@@ -147,12 +147,24 @@ export function updateTradeOnClose(id: string, exitPrice: number, pnl: number, p
 }
 
 export function updateTradeWithRealExecution(id: string, realPrice: number, realSizeUsd: number) {
+    // Get existing trade to find the agentId and the estimated size we already deducted
+    const trade = db.prepare('SELECT agentId, positionSize FROM trades WHERE id = ?').get(id) as { agentId: string; positionSize: number } | undefined;
+    if (!trade) return;
+
     const stmt = db.prepare(`
         UPDATE trades
         SET entryPrice = ?, positionSize = ?
         WHERE id = ?
     `);
     stmt.run(realPrice, realSizeUsd, id);
+
+    // Adjust balance by the difference (real - estimated)
+    const diff = realSizeUsd - trade.positionSize;
+    if (Math.abs(diff) > 0.001) {
+        db.prepare(`UPDATE agent_stats SET balance = balance - ? WHERE agentId = ?`).run(diff, trade.agentId);
+        console.log(`[DB] Adjusted ${trade.agentId} balance by ${diff > 0 ? '-' : '+'}$${Math.abs(diff).toFixed(2)} due to real execution slippage/rounding.`);
+    }
+
     console.log(`[DB] Updated trade ${id} with real execution data: @ ${(realPrice * 100).toFixed(0)}¢ ($${realSizeUsd.toFixed(2)})`);
 }
 
